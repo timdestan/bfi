@@ -19,30 +19,40 @@ function summary() {
   echo -e "$BOLD$GREEN==>$WHITE ${1}$RESET"
 }
 
-function run_interpreter() {
-  local test_program=$1
-
-  # Run the interpeter, saving output.
-  local executable="./bfi examples/$test_program"
-  local input=examples/${test_program}.in
+function run_program() {
+  local exe=$1
+  local input=$2
+  local expected=$3
 
   if [ -f $input ]; then
-    $executable < $input > output.txt
+    $exe < $input > output.txt
   else
-    $executable > output.txt
+    $exe > output.txt
   fi
 
   # Compare output.
-  local expected_output=examples/${test_program}.out
-  if [ -f $expected_output ]; then
-    diff output.txt $expected_output > /dev/null
+  if [ -f $expected ]; then
+    diff output.txt $expected > /dev/null
   fi
 
   echo "OK"
 }
 
+function run_interpreter() {
+  local test_program=$1
+
+  # Run the interpeter, saving output.
+  local exe="./bfi examples/$test_program"
+  local input=examples/${test_program}.in
+  local expected=examples/${test_program}.out
+
+  run_program "$exe" $input $expected
+}
+
 function run_codegen() {
   local test_program=$1
+  local input=examples/${test_program}.in
+  local expected=examples/${test_program}.out
 
   local bfsrc="examples/$test_program"
   local csrc="${bfsrc/.bf/.c}"
@@ -51,20 +61,7 @@ function run_codegen() {
   ./bfgen $bfsrc > $csrc
   clang $csrc -o $exe
 
-  local input=examples/${test_program}.in
-  if [ -f $input ]; then
-    $exe < $input > output.txt
-  else
-    $exe > output.txt
-  fi
-
-  # Compare output.
-  local expected_output=examples/${test_program}.out
-  if [ -f $expected_output ]; then
-    diff output.txt $expected_output > /dev/null
-  fi
-
-  echo "OK"
+  run_program $exe $input $expected
 }
 
 function check_interpreter() {
